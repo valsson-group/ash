@@ -22,7 +22,7 @@ import scipy as sci
 import scipy.optimize
 import scipy.fftpack
 
-def kde(data, N=None, MIN=None, MAX=None):
+def kde(data, N=None, MIN=None, MAX=None, weights=None):
 
     # Parameters to set up the mesh on which to calculate
     N = 2**14 if N is None else int(2**sci.ceil(sci.log2(N)))
@@ -38,7 +38,7 @@ def kde(data, N=None, MIN=None, MAX=None):
 
     # Histogram the data to get a crude first approximation of the density
     M = len(data)
-    DataHist, bins = sci.histogram(data, bins=N, range=(MIN,MAX))
+    DataHist, bins = sci.histogram(data, bins=N, range=(MIN,MAX), weights=weights)
     DataHist = DataHist/M
     DCTData = scipy.fftpack.dct(DataHist, norm=None)
 

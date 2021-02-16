@@ -7,30 +7,31 @@ Created on Mon Aug 17 13:48:58 2015
 from __future__ import division, print_function
 import numpy as np
 import pylab as plt
-from .kde import kde
+from kde import kde
 from scipy import stats
 import tempfile
 
 
 class ash:
     def __init__(self, data, bin_num=None, shift_num=50, density=True,
-                 force_scott=False, rule='scott'):
+                 force_scott=False, rule='scott', weights=None):
         self.data_min = min(data)
         self.data_max = max(data)
         self.shift_num = shift_num
         self.data = data
         self.data_len = len(self.data)
         self.density = density
+        self.weights = weights 
 
         # If None use KDE to autobin
         if bin_num is None:
-            kde_result = kde(self.data)
+            kde_result = kde(self.data, weights=self.weights)
             if len(self.data) >= 50 and not force_scott and kde_result:
                 self.bw, self.kde_mesh, self.kde_den = kde_result
                 self._bins_from_bw()
                 self.bw2, self.kde_mesh, self.kde_den = \
                     kde(self.data, None, self.ash_mesh.min(),
-                        self.ash_mesh.max())
+                        self.ash_mesh.max(), weights=self.weights)
             elif rule == 'fd':
                 print("Using FD rule")
                 kernel = stats.gaussian_kde(self.data)
@@ -43,7 +44,7 @@ class ash:
                 self.kde_den = kernel(self.kde_mesh)
             else:
                 print("Using Scott's rule")
-                kernel = stats.gaussian_kde(self.data)
+                kernel = stats.gaussian_kde(self.data,weights=self.weights)
                 kernel.set_bandwidth(rule)
                 # kde factor is bandwidth scaled by sigma
                 self.bw = kernel.factor * self.data.std()
@@ -54,7 +55,7 @@ class ash:
             print("Using bin number: ", bin_num)
             self.set_bins(bin_num)
 
-            kernel = stats.gaussian_kde(self.data)
+            kernel = stats.gaussian_kde(self.data,weights=self.weights)
             kernel.set_bandwidth(self.bw)
             self.kde_mesh = self.ash_mesh
             self.kde_den = kernel(self.kde_mesh)
@@ -94,7 +95,7 @@ class ash:
                           self.MAX + i * self.SHIFT - self.bin_width)
             hist, self.bin_edges = np.histogram(self.data, self.bin_num + 1,
                                                 range=hist_range,
-                                                density=density)
+                                                density=density, weights=self.weights)
 #            print(self.bin_edges[1]-self.bin_edges[0])
             hist_mesh = np.ravel(np.meshgrid(hist,
                                  np.zeros(self.shift_num))[0], order='F')
@@ -134,7 +135,7 @@ class ash:
                           self.SHIFT - self.bin_width)
             self.hist_range = hist_range
             hist, bin_edges = np.histogram(self.data, self.bin_num+1,
-                                           range=hist_range, density=density)
+                                           range=hist_range, density=density, weights=self.weights)
             self.hist_max = (max(hist) if max(hist) > self.hist_max
                              else self.hist_max)
             n, bin_edges, patches = ax.hist(self.data, self.bin_num + 1,
@@ -142,7 +143,7 @@ class ash:
                                             histtype='stepfilled',
                                             alpha=0.75 / self.shift_num,
                                             color=color, linewidth=0,
-                                            density=density, rasterized=True)
+                                            density=density, rasterized=True, weights=self.weights)
         ymin, ymax = ax.get_ylim()
         xmin, xmax = ax.get_xlim()
         self.hist_max += self.hist_max*0.1
@@ -162,7 +163,7 @@ class ash:
                           self.MAX + i * self.SHIFT - self.bin_width)
             self.hist_range = hist_range
             hist, bin_edges = np.histogram(self.data, self.bin_num + 1,
-                                           range=hist_range, density=density)
+                                           range=hist_range, density=density, weights=self.weights)
             self.hist_max = (max(hist) if max(hist) > self.hist_max
                              else self.hist_max)
             n, bin_edges, patches = ax_tmp.hist(self.data, self.bin_num + 1,
@@ -170,7 +171,7 @@ class ash:
                                                 histtype='stepfilled',
                                                 alpha=0.75 / self.shift_num,
                                                 color=color, linewidth=0,
-                                                density=density, rasterized=True)
+                                                density=density, rasterized=True, weights=self.weights)
         ymin, ymax = ax.get_ylim()
         xmin, xmax = ax.get_xlim()
         self.hist_max += self.hist_max*0.1
