@@ -25,13 +25,13 @@ class ash:
 
         # If None use KDE to autobin
         if bin_num is None:
-            kde_result = kde(self.data, weights=self.weights)
+            kde_result = kde(self.data)
             if len(self.data) >= 50 and not force_scott and kde_result:
                 self.bw, self.kde_mesh, self.kde_den = kde_result
                 self._bins_from_bw()
                 self.bw2, self.kde_mesh, self.kde_den = \
                     kde(self.data, None, self.ash_mesh.min(),
-                        self.ash_mesh.max(), weights=self.weights)
+                        self.ash_mesh.max())
             elif rule == 'fd':
                 print("Using FD rule")
                 kernel = stats.gaussian_kde(self.data)
@@ -44,7 +44,7 @@ class ash:
                 self.kde_den = kernel(self.kde_mesh)
             else:
                 print("Using Scott's rule")
-                kernel = stats.gaussian_kde(self.data,weights=self.weights)
+                kernel = stats.gaussian_kde(self.data)
                 kernel.set_bandwidth(rule)
                 # kde factor is bandwidth scaled by sigma
                 self.bw = kernel.factor * self.data.std()
@@ -55,7 +55,7 @@ class ash:
             print("Using bin number: ", bin_num)
             self.set_bins(bin_num)
 
-            kernel = stats.gaussian_kde(self.data,weights=self.weights)
+            kernel = stats.gaussian_kde(self.data)
             kernel.set_bandwidth(self.bw)
             self.kde_mesh = self.ash_mesh
             self.kde_den = kernel(self.kde_mesh)
